@@ -5,7 +5,9 @@ your local device. It is the open source / on device companion to
 [MusicFX DJ Mode](https://labs.google/fx/tools/music-fx-dj) and the
 [Lyria RealTime API](https://ai.google.dev/gemini-api/docs/music-generation).
 
-This is a 👀 sneak preview of the Magenta RT project. We will have
+Our current models already
+allow both [text](https://www.youtube.com/watch?v=Ae1Kz2zmh9M) and
+[audio](https://www.youtube.com/watch?v=vHIf2UKXmp4) prompting. We will have
 [more to share](#coming-soon) in the coming weeks including a technical report
 and additional features!
 
