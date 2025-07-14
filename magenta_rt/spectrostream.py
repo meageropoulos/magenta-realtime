@@ -212,9 +212,7 @@ class SpectroStreamBase(abc.ABC):
 class SpectroStreamSavedModel(SpectroStreamBase):
   """A SpectroStream model that tokenizes audio."""
 
-  def __init__(
-      self, max_rvq_depth: int = 64, skip_cache: bool = False, lazy: bool = True
-  ):
+  def __init__(self, max_rvq_depth: int = 64, lazy: bool = True):
     if max_rvq_depth < 0 or max_rvq_depth > 64:
       raise ValueError('max_rvq_depth must be in the range [0, 64].')
     super().__init__(
@@ -226,7 +224,6 @@ class SpectroStreamSavedModel(SpectroStreamBase):
             rvq_codebook_size=1024,
         )
     )
-    self._skip_cache = skip_cache
     if not lazy:
       self._encoder  # pylint: disable=pointless-statement
       self._decoder  # pylint: disable=pointless-statement
@@ -243,33 +240,21 @@ class SpectroStreamSavedModel(SpectroStreamBase):
   def _encoder(self) -> Any:
     return utils.load_model_cached(
         'tf',
-        asset.fetch(
-            'savedmodels/ssv2_48k_stereo/encoder',
-            skip_cache=self._skip_cache,
-            is_dir=True,
-        ),
+        asset.fetch('savedmodels/ssv2_48k_stereo/encoder', is_dir=True),
     )
 
   @functools.cached_property
   def _decoder(self) -> Any:
     return utils.load_model_cached(
         'tf',
-        asset.fetch(
-            'savedmodels/ssv2_48k_stereo/decoder',
-            skip_cache=self._skip_cache,
-            is_dir=True,
-        ),
+        asset.fetch('savedmodels/ssv2_48k_stereo/decoder', is_dir=True),
     )
 
   @functools.cached_property
   def _quantizer(self) -> np.ndarray:
     return utils.load_model_cached(
         'tf',
-        asset.fetch(
-            'savedmodels/ssv2_48k_stereo/quantizer',
-            skip_cache=self._skip_cache,
-            is_dir=True,
-        ),
+        asset.fetch('savedmodels/ssv2_48k_stereo/quantizer', is_dir=True),
     )
 
   @functools.cached_property

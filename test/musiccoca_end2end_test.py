@@ -25,7 +25,7 @@ from magenta_rt import musiccoca
 class MusicCoCaTest(absltest.TestCase):
 
   def test_musiccoca_savedmodel(self):
-    style_model = musiccoca.MusicCoCa(skip_cache=True)
+    style_model = musiccoca.MusicCoCa()
 
     # Single
     embedding = style_model.embed("metal")
@@ -47,7 +47,7 @@ class MusicCoCaTest(absltest.TestCase):
     # Test text
     with open(asset.fetch("testdata/musiccoca_mv212/inputs.txt")) as f:
       input_text = f.read().strip().splitlines()
-    style_model = musiccoca.MusicCoCa(skip_cache=True)
+    style_model = musiccoca.MusicCoCa()
     embeddings = style_model.embed(input_text)
     embeddings_ref = np.load(
         asset.fetch("testdata/musiccoca_mv212/embeddings.npy")
@@ -62,9 +62,7 @@ class MusicCoCaTest(absltest.TestCase):
 
     # Test quantizer against SavedModel.
     quantizer_sm = tf.saved_model.load(
-        asset.fetch(
-            "savedmodels/musiccoca_mv212_quant", skip_cache=True, is_dir=True
-        )
+        asset.fetch("savedmodels/musiccoca_mv212_quant", is_dir=True)
     )
     tokens_sm = quantizer_sm(tf.constant(embeddings_ref)).cpu().numpy()
     np.testing.assert_array_equal(tokens_sm[:, 0], tokens_ref)
@@ -80,7 +78,7 @@ class MusicCoCaTest(absltest.TestCase):
     self.assertLess(np.max(error), 1e-5)
 
   def test_musiccoca_audio_embedding(self):
-    style_model = musiccoca.MusicCoCa(skip_cache=True)
+    style_model = musiccoca.MusicCoCa()
     waveform = audio.Waveform(np.random.randn(160000, 2), 16000)
     embeddings = style_model([waveform, "static", waveform, "noise"])
     self.assertIsInstance(embeddings, np.ndarray)

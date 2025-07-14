@@ -342,7 +342,7 @@ class MusicCoCaBase(abc.ABC):
 class MusicCoCaV212F(MusicCoCaBase):
   """A model that embeds audio and text into a common embedding space."""
 
-  def __init__(self, skip_cache: bool = False, lazy: bool = True):
+  def __init__(self, lazy: bool = True):
     super().__init__(
         MusicCoCaConfiguration(
             sample_rate=16000,
@@ -352,7 +352,6 @@ class MusicCoCaV212F(MusicCoCaBase):
             rvq_codebook_size=1024,
         )
     )
-    self._skip_cache = skip_cache
     if not lazy:
       self._encoder  # pylint: disable=pointless-statement
       self._rvq_codebooks  # pylint: disable=pointless-statement
@@ -371,16 +370,12 @@ class MusicCoCaV212F(MusicCoCaBase):
     with tf.device('/cpu:0'):
       return utils.load_model_cached(
           'hub',
-          asset.fetch(
-              self._encoder_path, skip_cache=self._skip_cache, is_dir=True
-          ),
+          asset.fetch(self._encoder_path, is_dir=True),
       )
 
   @functools.cached_property
   def _rvq_codebooks(self) -> np.ndarray:
-    path = asset.fetch(
-        self._rvq_codebooks_path, skip_cache=self._skip_cache, is_dir=True
-    )
+    path = asset.fetch(self._rvq_codebooks_path, is_dir=True)
     var_path = f'{path}/variables/variables'
     result = np.zeros(
         (

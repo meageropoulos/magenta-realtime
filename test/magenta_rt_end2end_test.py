@@ -22,8 +22,7 @@ from magenta_rt import system
 class MagentaRTEnd2EndTest(absltest.TestCase):
 
   def test_magenta_rt(self):
-    mrt = system.MagentaRT(tag="base", skip_cache=True, lazy=True)
-    mrt.warm_start()
+    mrt = system.MagentaRT(tag="base", lazy=False)
     waveform, state = mrt.generate_chunk(max_decode_frames=10)
     self.assertEqual(waveform.samples.shape, (21120, 2))
     self.assertEqual(state.context_tokens.shape, (250, 16))

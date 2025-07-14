@@ -390,7 +390,6 @@ class MagentaRTT5X(MagentaRTBase):
       topk: int = 40,
       device: Optional[str | _DeviceParams] = None,
       checkpoint_dir: Optional[str] = None,
-      skip_cache: bool = False,
       lazy: bool = True,
       **kwargs,
   ):
@@ -404,16 +403,20 @@ class MagentaRTT5X(MagentaRTBase):
       topk: The default topk parameter during inference.
       device: The device to use, or None for CPU.
       checkpoint_dir: If specified, overrides the default checkpoint directory.
-      skip_cache: If True, skip fetch to disk and load checkpoint from GCP.
       lazy: Whether to load the LLM lazily.
       **kwargs: Additional keyword arguments for the base class.
     """
+    if "skip_cache" in kwargs:
+      warnings.warn(
+          "skip_cache is no longer supported", DeprecationWarning, stacklevel=2
+      )
+      del kwargs["skip_cache"]
     if tag not in ["base", "large"]:
       raise ValueError(f"Unsupported tag: {tag}")
     if isinstance(device, str) and device not in _DEVICE_TO_CONFIGURATION:
       raise ValueError(f"Unsupported device: {device}")
-    codec = spectrostream.SpectroStreamJAX(skip_cache=skip_cache, lazy=lazy)
-    style_model = musiccoca.MusicCoCa(skip_cache=skip_cache, lazy=lazy)
+    codec = spectrostream.SpectroStreamJAX(lazy=lazy)
+    style_model = musiccoca.MusicCoCa(lazy=lazy)
     super().__init__(
         *args,
         config=MagentaRTConfiguration(
@@ -437,7 +440,6 @@ class MagentaRTT5X(MagentaRTBase):
     self._temperature = temperature
     self._topk = topk
     self._device = device
-    self._skip_cache = skip_cache
     self._checkpoint_dir = checkpoint_dir
     if not lazy:
       self.warm_start()
@@ -459,12 +461,10 @@ class MagentaRTT5X(MagentaRTBase):
     """Loads the t5x.InteractiveModel."""
     if self._checkpoint_dir is None:
       if self._tag == "base":
-        path = "checkpoints/llm_base_x4286_c1860k"
+        path = "checkpoints/llm_base_x4286_c1860k.tar"
       else:
-        path = "checkpoints/llm_large_x3047_c1860k"
-      checkpoint_dir = asset.fetch(
-          path, is_dir=True, skip_cache=self._skip_cache, parallelism=16
-      )
+        path = "checkpoints/llm_large_x3047_c1860k.tar"
+      checkpoint_dir = asset.fetch(path, is_dir=True, extract_archive=True)
     else:
       checkpoint_dir = self._checkpoint_dir
     batch_size, num_partitions, model_parallel_submesh = self._device_params

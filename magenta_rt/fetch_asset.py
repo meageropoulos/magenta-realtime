@@ -16,11 +16,12 @@
 """Binary to download an asset from GCP to cache dir.
 
 Example usage:
-  python -m magenta_rt.fetch_asset --asset_path=savedmodels/test_model.model
+  python -m magenta_rt.fetch_asset --asset=README.md
 """
 
 from absl import app
 from absl import flags
+from absl import logging
 
 from . import asset
 
@@ -43,12 +44,15 @@ _IS_DIR = flags.DEFINE_bool(
 
 
 def main(unused_argv):
-  asset.fetch(
+  is_archive = _ASSET.value.endswith('.tar')
+  result_path = asset.fetch(
       _ASSET.value,
-      is_dir=_IS_DIR.value,
+      is_dir=is_archive or _IS_DIR.value,
+      extract_archive=is_archive,
       override_cache=True,
       source=_SOURCE.value,
   )
+  logging.info('Fetched %s to %s', _ASSET.value, result_path)
 
 
 if __name__ == '__main__':

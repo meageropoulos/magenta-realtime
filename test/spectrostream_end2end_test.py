@@ -25,7 +25,7 @@ from magenta_rt import spectrostream
 class SpectroStreamTest(absltest.TestCase):
 
   def test_spectrostream_savedmodel(self):
-    spectrostream_model = spectrostream.SpectroStream(skip_cache=True)
+    spectrostream_model = spectrostream.SpectroStream()
     waveform = audio.Waveform(
         np.random.rand(16000, 2).astype(np.float32), 16000
     )
@@ -59,7 +59,7 @@ class SpectroStreamTest(absltest.TestCase):
 
     # Encode and compare against reference tokens
     with tf.device('/cpu:0'):
-      spectrostream_model = spectrostream.SpectroStream(skip_cache=True)
+      spectrostream_model = spectrostream.SpectroStream()
       tokens = spectrostream_model.encode(waveforms)
       tokens_ref = np.load(asset.fetch('testdata/ssv2_48k_stereo/tokens.npy'))
       self.assertEqual(tokens.shape, tokens_ref.shape)

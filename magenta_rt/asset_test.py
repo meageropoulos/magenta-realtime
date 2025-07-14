@@ -33,13 +33,14 @@ class TestAsset(absltest.TestCase):
 
   def test_get_path_gcp(self):
     self.assertEqual(
-        asset.get_path_gcp("foo/bar/baz"), "gs://magenta-rt-public/foo/bar/baz"
+        asset.get_path_gcp("foo/bar/baz"),
+        f"gs://{asset.GCP_BUCKET.name}/foo/bar/baz",
     )
 
   def test_get_path_hf(self):
     self.assertEqual(
         asset.get_path_hf("foo/bar/baz"),
-        "hf://google/magenta-realtime/foo/bar/baz",
+        f"hf://{asset.HF_REPO_NAME}/foo/bar/baz",
     )
 
 
