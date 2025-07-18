@@ -1,5 +1,6 @@
 ---
 license: cc-by-4.0
+library_name: magenta-realtime
 ---
 
 # Model Card for Magenta RT
