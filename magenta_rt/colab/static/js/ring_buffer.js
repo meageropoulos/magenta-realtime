@@ -18,9 +18,18 @@ class RingBuffer {
    * Resets the buffer.
    */
   reset() {
+    console.log('resetting buffer');
     this.head = 0;
     this.tail = 0;
     this.framesAvailable = 0;
+  }
+
+  /**
+   * Prefills the buffer with zeros.
+   */
+  prefill() {
+    console.log('prefilling buffer');
+    this.framesAvailable = this.length;
   }
 
   /**
@@ -37,10 +46,6 @@ class RingBuffer {
     this.tail = (this.tail + sourceLength) % this.length;
 
     this.framesAvailable += sourceLength;
-    if (this.framesAvailable > this.length) {
-      this.framesAvailable = this.length;
-      this.head = this.tail;
-    }
   }
 
   /**
@@ -48,23 +53,16 @@ class RingBuffer {
    * @param {!Float32Array} array The array to fill with samples.
    */
   pop(array) {
-    if (this.framesAvailable === 0) {
-      return;
-    }
-
     const destinationLength = array.length;
 
     for (let i = 0; i < destinationLength; ++i) {
       const readIndex = (this.head + i) % this.length;
       array[i] = this.buffer[readIndex];
+      this.buffer[readIndex] = 0;
     }
 
     this.head = (this.head + destinationLength) % this.length;
-
     this.framesAvailable -= destinationLength;
-    if (this.framesAvailable < 0) {
-      this.framesAvailable = 0;
-    }
   }
 }
 
@@ -97,13 +95,23 @@ class ExternalRingBufferWorkletProcessor extends AudioWorkletProcessor {
     // size is multiplied by the number of channels.
     this.outputRingBuffer =
         new RingBuffer(outputRingLength * this.channelCount);
-    this.outputRingBuffer.framesAvailable = this.outputRingBuffer.length;
+    this.outputRingBuffer.prefill();
 
     this.externalOut = [];
+    this.waitingForExternal = 0;
 
     this.port.onmessage = (e) => {
       this.onmessage(e.data);
     };
+  }
+
+  /**
+   * Resets the input and output buffers.
+   */
+  resetBuffers() {
+    this.inputRingBuffer.reset();
+    this.outputRingBuffer.reset();
+    this.outputRingBuffer.prefill();
   }
 
   /**
@@ -114,11 +122,13 @@ class ExternalRingBufferWorkletProcessor extends AudioWorkletProcessor {
     switch (data.type) {
       case 'buffer':
         this.externalOut.push(data.value);
+        this.waitingForExternal -= 1;
         break;
       case 'reset':
         console.log('ring buffer reset');
-        this.inputRingBuffer.reset();
-        this.outputRingBuffer.reset();
+        this.resetBuffers();
+        this.externalOut = [];
+        this.waitingForExternal = 0;
         break;
       default:
         console.error('Unknown message type: ' + data.type);
@@ -148,6 +158,10 @@ class ExternalRingBufferWorkletProcessor extends AudioWorkletProcessor {
     }
 
     if (this.inputRingBuffer.framesAvailable >= this.kernelBufferSize) {
+      if (this.waitingForExternal > 3) {
+        this.port.postMessage({type: 'stopDSP'});
+        return true;
+      }
       // pop from input buffer
       let inputBuffer = new Float32Array(this.kernelBufferSize);
       this.inputRingBuffer.pop(inputBuffer);
@@ -157,16 +171,13 @@ class ExternalRingBufferWorkletProcessor extends AudioWorkletProcessor {
         framesAvailable: this.inputRingBuffer.framesAvailable,
         processorBufferSize: input.length,
       });
+      this.waitingForExternal += 1;
     }
 
     let outputBuffer =
         new Float32Array(outputs[0][0].length * this.channelCount);
 
-    if (this.outputRingBuffer.framesAvailable >= outputBuffer.length) {
-      this.outputRingBuffer.pop(outputBuffer);
-    } else {
-      this.outputRingBuffer.reset();
-    }
+    this.outputRingBuffer.pop(outputBuffer);
 
     for (let i = 0; i < outputs[0][0].length; i++) {
       for (let c = 0; c < this.channelCount; c++) {

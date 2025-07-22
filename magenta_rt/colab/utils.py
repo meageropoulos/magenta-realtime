@@ -204,3 +204,111 @@ class AudioStreamer:
 
   def reset_ring_buffer(self):
     _call_js("resetRingBuffer")
+
+
+class LatencyEstimator:
+  """Estimates the latency of a real-time audio system.
+
+  This class measures the time it takes for an audio signal to travel from the
+  input to the output of a system. It does this by playing a "sweep" signal and
+  measuring the correlation between the input and output signals.
+  """
+
+  def __init__(
+      self,
+      rate: int,
+      fmin: int = 100,
+      fmax: int = 10000,
+      buffer_size: int = 8192,
+      duration: int = 1,
+      volume_db: int = -20,
+  ):
+    """Initializes the LatencyEstimator.
+
+    Args:
+      rate: The sample rate of the audio system.
+      fmin: The minimum frequency of the sweep signal.
+      fmax: The maximum frequency of the sweep signal.
+      buffer_size: The size of the audio buffer used for streaming.
+      duration: The duration of the sweep signal in seconds.
+      volume_db: The volume of the sweep signal in dB.
+    """
+    self.inputs = []
+    self.outputs = []
+    self.rate = rate
+    self.buffer_size = buffer_size
+    self.wait_in = 1
+
+    # create sine sweep with some extra padding
+    volume_db = min(0, volume_db)
+    freq = np.exp(np.linspace(np.log(fmin), np.log(fmax), duration * rate))
+    sweep = np.sin(np.cumsum(freq / rate * 2 * np.pi)) * 10 ** (volume_db / 20)
+    sweep = np.pad(
+        sweep,
+        ((0, 3 * buffer_size)),
+    )
+    self.sweep = sweep
+    self.done = False
+
+    print(
+        "Hit the start button below to measure your system round trip latency."
+    )
+    print("WARNING: this can be loud. If you are wearing headphones,")
+    print("take them off and bring them close to your microphone.")
+
+    self.start()
+
+  def audio_callback(self, inputs: np.ndarray):
+    """Audio callback function.
+
+    This function is called by the AudioStreamer class. It receives audio input
+    and sends back the sweep signal.
+
+    Args:
+      inputs: The audio input.
+
+    Returns:
+      The sweep signal.
+    """
+    if self.sweep.shape[0] < inputs.shape[0]:
+      _call_js("stopAll")
+      self.done = True
+      print(f"Estimated round trip latency: {self.get_latency()/self.rate:.2}s")
+      return np.zeros_like(inputs)
+
+    self.inputs.append(inputs)
+    chunk = self.sweep[: inputs.shape[0]]
+    self.sweep = self.sweep[inputs.shape[0] :]
+    self.outputs.append(chunk)
+    return chunk
+
+  def start(self):
+    """Starts the audio streamer."""
+    AudioStreamer(
+        self.audio_callback,
+        rate=self.rate,
+        buffer_size=self.buffer_size,
+        warmup=False,
+        enable_input=True,
+        raw_input_audio=True,
+        additional_buffered_samples=0,
+    )
+
+  def get_latency(self):
+    """Gets the latency of the system.
+
+    Returns:
+      The latency in samples.
+
+    Raises:
+      RuntimeError: If the latency has not been measured yet.
+    """
+    if not self.done:
+      raise RuntimeError("You must measure latency first.")
+
+    x = np.concatenate(self.inputs, 0)
+    y = np.concatenate(self.outputs, 0)
+    x = x / np.max(np.abs(x))
+    y = y / np.max(np.abs(y))
+    cross_correlation = np.fft.irfft(np.fft.rfft(x) * np.fft.rfft(np.flip(y)))
+    return np.argmax(np.abs(cross_correlation))

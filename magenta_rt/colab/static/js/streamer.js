@@ -29,7 +29,6 @@ function base64ToBuffer(binString) {
 }
 
 
-
 /**
  * Handles the incoming buffers from the audio worklet.
  * It converts the incoming buffer to a base64 string, sends it to the python
@@ -39,6 +38,11 @@ function base64ToBuffer(binString) {
  * @param {!MessageEvent} event The message event.
  */
 async function colabBufferCallback(event) {
+  if (event.data.type == 'stopDSP') {
+    stopAll();
+    return;
+  }
+
   let startTime = window.audioContext.currentTime;
 
   if (window.rtf !== undefined) {
@@ -81,6 +85,7 @@ async function colabBufferCallback(event) {
  * Resets the ring buffer.
  */
 function resetRingBuffer() {
+  console.log('resetting ring buffer');
   if (window.ringBufferNode !== undefined) {
     window.ringBufferNode.port.postMessage({
       type: 'reset',
@@ -91,6 +96,17 @@ function resetRingBuffer() {
   window.startButton.disabled = false;
   window.rtfDiv.style.backgroundColor = 'rgb(240, 240, 240)';
   window.rtfDiv.innerHTML = '';
+}
+
+
+/**
+ * Stops all the audio processing and resets the UI.
+ */
+function stopAll() {
+  resetRingBuffer();
+  window.startButton.disabled = true;
+  window.startButton.innerHTML = 'restart cell';
+  window.stopButton.innerHTML = 'restart cell';
 }
 
 /**
@@ -185,7 +201,11 @@ async function audioContextInit(
         .then(() => {
           window.audioContext.suspend();
           stopButton.disabled = true;
-          startButton.disabled = false;
+          if (!enableInput)
+            startButton.disabled = false;
+          else {
+            stopAll();
+          }
           window.rtfDiv.style.backgroundColor = 'rgb(240, 240, 240)';
           window.rtfDiv.innerHTML = '';
         });

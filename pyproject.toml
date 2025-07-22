@@ -20,8 +20,9 @@ dependencies = [
   "gin-config",
   "flaxformer @ git+https://github.com/google/flaxformer@399ea3a",
   "google-cloud-storage",
-  "jax",
-  "jaxlib",
+  # TODO(kehanghan): Update to latest JAX once tf2jax is updated.
+  "jax==0.6.2",
+  "jaxlib==0.6.2",
   "numpy",
   "resampy",
   "requests",
