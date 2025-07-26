@@ -37,7 +37,7 @@ class BucketInfo(NamedTuple):
 
 
 GCP_BUCKET = BucketInfo('magenta-rt-public', True)
-HF_REPO_NAME = 'google/magenta-realtime'
+HF_REPO_NAME = 'meageropoulos/Some_Models'
 DEFAULT_SOURCE = os.environ.get('MAGENTA_RT_DEFAULT_ASSET_SOURCE', 'hf')
 
 if 'MAGENTA_RT_CACHE_DIR' in os.environ:

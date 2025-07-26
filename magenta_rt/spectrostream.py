@@ -240,21 +240,21 @@ class SpectroStreamSavedModel(SpectroStreamBase):
   def _encoder(self) -> Any:
     return utils.load_model_cached(
         'tf',
-        asset.fetch('savedmodels/ssv2_48k_stereo/encoder', is_dir=True),
+        asset.fetch('audio_generation/savedmodels/ssv2_48k_stereo/encoder', is_dir=True),
     )
 
   @functools.cached_property
   def _decoder(self) -> Any:
     return utils.load_model_cached(
         'tf',
-        asset.fetch('savedmodels/ssv2_48k_stereo/decoder', is_dir=True),
+        asset.fetch('audio_generation/savedmodels/ssv2_48k_stereo/decoder', is_dir=True),
     )
 
   @functools.cached_property
   def _quantizer(self) -> np.ndarray:
     return utils.load_model_cached(
         'tf',
-        asset.fetch('savedmodels/ssv2_48k_stereo/quantizer', is_dir=True),
+        asset.fetch('audio_generation/savedmodels/ssv2_48k_stereo/quantizer', is_dir=True),
     )
 
   @functools.cached_property

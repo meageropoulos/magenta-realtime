@@ -359,11 +359,11 @@ class MusicCoCaV212F(MusicCoCaBase):
 
   @property
   def _encoder_path(self) -> str:
-    return 'savedmodels/musiccoca_mv212f_cpu_compat'
+    return 'audio_generation/savedmodels/musiccoca_mv212f_cpu_compat'
 
   @property
   def _rvq_codebooks_path(self) -> str:
-    return 'savedmodels/musiccoca_mv212_quant'
+    return 'audio_generation/savedmodels/musiccoca_mv212_quant'
 
   @functools.cached_property
   def _encoder(self) -> Any:

@@ -461,9 +461,9 @@ class MagentaRTT5X(MagentaRTBase):
     """Loads the t5x.InteractiveModel."""
     if self._checkpoint_dir is None:
       if self._tag == "base":
-        path = "checkpoints/llm_base_x4286_c1860k.tar"
+        path = "audio_generation/checkpoints/llm_base_x4286_c1860k.tar"
       else:
-        path = "checkpoints/llm_large_x3047_c1860k.tar"
+        path = "audio_generation/checkpoints/llm_large_x3047_c1860k.tar"
       checkpoint_dir = asset.fetch(path, is_dir=True, extract_archive=True)
     else:
       checkpoint_dir = self._checkpoint_dir
